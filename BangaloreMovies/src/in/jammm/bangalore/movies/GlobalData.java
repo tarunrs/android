@@ -1,8 +1,15 @@
 package in.jammm.bangalore.movies;
 
+import java.util.ArrayList;
+
 import org.json.JSONArray;
 
 public class GlobalData {
-	static JSONArray[] tts = null;
-	static String[] MOVIES =  new String[] {"Did not recieve data from server!"};
+	 ArrayList<String> MOVIES; 
+	 ArrayList<JSONArray> tts = null;
+	// String[] MOVIES = null;
+	 public GlobalData(){
+		 this.MOVIES = MOVIES;
+		 this.tts = tts;
+	 }
 }
