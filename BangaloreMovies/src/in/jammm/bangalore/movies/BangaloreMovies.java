@@ -1,5 +1,7 @@
 package in.jammm.bangalore.movies;
 
+import in.jammm.bangalore.movies.HttpHelper;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -19,6 +21,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,7 +60,6 @@ public class BangaloreMovies extends ListActivity {
 		Thread thread =  new Thread(null, loadMovies, "MagentoBackground");
         thread.start();
         m_ProgressDialog = ProgressDialog.show(this, "Please wait...", "Retrieving data ...", true);
-        Toast.makeText(getApplicationContext(), err_msg, Toast.LENGTH_SHORT).show();
 	}
     private Runnable returnRes = new Runnable() {
 
@@ -70,11 +79,8 @@ public class BangaloreMovies extends ListActivity {
         		  		handleButtonClick(position);
         		    }
         		  });
-        	  err_msg = String.valueOf(globalData.MOVIES.size());
             }
-            //Toast.makeText(getApplicationContext(), err_msg, Toast.LENGTH_SHORT).show();
             m_ProgressDialog.dismiss();
-            Toast.makeText(getApplicationContext(), err_msg, Toast.LENGTH_SHORT).show();
             m_adapter.notifyDataSetChanged();
         }
     };
@@ -99,9 +105,21 @@ public class BangaloreMovies extends ListActivity {
 	
 	private void populateArray() throws MalformedURLException, IOException, JSONException 
 	{
-		WebFile file   = new WebFile( "http://jammm.in/tarunrs/movies" );
-		Object content = file.getContent();
-		String res = (String) content;
+	   	HttpClient httpClient = new DefaultHttpClient();
+    	HttpContext localContext = new BasicHttpContext();
+    	HttpGet httpGet = new HttpGet("http://www.jammm.in/tarunrs/movies");
+    	HttpResponse response1 = null;
+		try {
+			response1 = httpClient.execute(httpGet, localContext);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String res = HttpHelper.request(response1);
+
 		JSONArray movies;
 		JSONObject response ;
 		try {
