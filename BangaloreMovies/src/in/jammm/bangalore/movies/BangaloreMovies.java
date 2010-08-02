@@ -10,11 +10,16 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -35,36 +40,66 @@ import org.json.JSONObject;
 
 public class BangaloreMovies extends ListActivity {
     
+	String city = "Bangalore";
 	private ProgressDialog m_ProgressDialog = null; 
     private ArrayAdapter<String> m_adapter;
     private Runnable loadMovies;
     GlobalData globalData = null;
     String err_msg = "asd";
     /** Called when the activity is first created. */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings:  
+            	//Toast.makeText(this, "You pressed the icon!", Toast.LENGTH_LONG).show();
+            	showSettings();
+                break;
+            case R.id.refresh:
+            	refreshList();
+            	break;
+            case R.id.exit:
+            	finish();     	
+                break;            
+        }
+        return true;
+    }
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 	  super.onCreate(savedInstanceState);
-	  
+  
 	  globalData = new GlobalData();
-	  //GlobalData.MOVIES = new String[];
-	  //m_orders = new ArrayList<Order>();
 	  globalData.MOVIES = new ArrayList<String>() ;
 	  globalData.tts = new ArrayList<JSONArray>() ;
 	  m_adapter = new ArrayAdapter<String>(this, R.layout.list_item, globalData.MOVIES);
 	  setListAdapter(m_adapter);
-	  loadMovies = new Runnable(){
-          public void run() {
-              getMovies();
-          };
-	  };
+	  refreshList();
+	 
+	}
+	private void refreshList(){
+		 getCity();
+		 loadMovies = new Runnable(){
+	          public void run() {
+	              getMovies();
+	          };
+		  };
 		Thread thread =  new Thread(null, loadMovies, "MagentoBackground");
         thread.start();
         m_ProgressDialog = ProgressDialog.show(this, "Please wait...", "Retrieving data ...", true);
+        
+        Toast.makeText(getApplicationContext(), city, Toast.LENGTH_SHORT).show();	
 	}
     private Runnable returnRes = new Runnable() {
 
         public void run() {
         	Log.d("len",String.valueOf(globalData.MOVIES.size()));
+        	m_adapter.clear();
             if( globalData.MOVIES != null &&  globalData.MOVIES.size()> 0){   
                 m_adapter.notifyDataSetChanged();
                 for(int i=0;i<globalData.MOVIES.size();i++)
@@ -86,6 +121,7 @@ public class BangaloreMovies extends ListActivity {
     };
 	
 	private void getMovies() {
+
 			// TODO Auto-generated method stub
 		 try{
 			 populateArray();
@@ -94,7 +130,15 @@ public class BangaloreMovies extends ListActivity {
            }
            runOnUiThread(returnRes);
        }
-			
+	private void getCity(){
+            // Get the xml/preferences.xml preferences
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            city = prefs.getString("city","Bangalore");
+	}
+	private void showSettings(){
+		Intent i = new Intent(this, EditPreferences.class);
+    	startActivity(i);
+	} 		
 	private void handleButtonClick(int pos)
     {
 		Intent i = new Intent(this, TheatreListings.class);
@@ -107,7 +151,8 @@ public class BangaloreMovies extends ListActivity {
 	{
 	   	HttpClient httpClient = new DefaultHttpClient();
     	HttpContext localContext = new BasicHttpContext();
-    	HttpGet httpGet = new HttpGet("http://www.jammm.in/tarunrs/movies");
+    	String url = "http://www.jammm.in/tarunrs/movies?city="+city;
+    	HttpGet httpGet = new HttpGet(url);
     	HttpResponse response1 = null;
 		try {
 			response1 = httpClient.execute(httpGet, localContext);
